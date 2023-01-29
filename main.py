@@ -1,5 +1,5 @@
 __author__ = "Süleyman Bozkurt"
-__version__ = "v2.0"
+__version__ = "v2.1"
 __maintainer__ = "Süleyman Bozkurt"
 __email__ = "sbozkurt.mbg@gmail.com"
 __date__ = '28.01.2023'
@@ -19,7 +19,6 @@ from threading import Thread
 from tkinter import messagebox
 ########################################################################
 from tkinter import ttk
-from PIL import ImageTk, Image
 import webbrowser
 import tkinter as tk
 from tkinter import *
@@ -179,6 +178,9 @@ class fomatter(ttk.Frame):
         # s.configure('My2.TFrame', background='#d3f5d3')
         ttk.Frame.__init__(self, parent)
 
+        self.selected_folder = ''
+        self.outputPath = ''
+
         self.font = Font(family="Times New Roman", size=16)
         self.pdf_label = tk.Label(self, text="Select Folder or a PDF file:", font=self.font)
         self.pdf_label.place(x=90, y=30)
@@ -254,6 +256,7 @@ class fomatter(ttk.Frame):
                                          "An error occurred while selecting the PDF file.\n\n" + traceback.format_exc())
 
     def select_output_folder(self):
+
         try:
             self.selected_folder = tkinter.filedialog.askdirectory()
             if self.selected_folder:
@@ -267,11 +270,21 @@ class fomatter(ttk.Frame):
     def Message(self, title, message):
         messagebox.showinfo(title=title, message=message)
 
-    def update_status_box(self, text):
-        self.statusbar.configure(state='normal')
-        self.statusbar.insert(END, text)
-        self.statusbar.see(END)
-        self.statusbar.configure(state='disabled')
+    def update_status_box(self, text, decision):
+        if decision:
+            self.statusbar.configure(state='normal')
+            lines = self.statusbar.get("1.0", "end-1c").splitlines()
+            if lines:
+                self.statusbar.delete("1.0", "end")
+                self.statusbar.insert("1.0", '\n'.join(lines[:-1]))
+            self.statusbar.insert(END, text)
+            self.statusbar.see(END)
+            self.statusbar.configure(state='disabled')
+        else:
+            self.statusbar.configure(state='normal')
+            self.statusbar.insert(END, text)
+            self.statusbar.see(END)
+            self.statusbar.configure(state='disabled')
 
     def clear_status_box(self):
         self.statusbar.configure(state='normal')
@@ -296,26 +309,24 @@ class fomatter(ttk.Frame):
         self.outputPath = self.outputbox.get()
 
         if self.outputPath != '':
-            try:
-                self.pathLocation = f'~/Desktop/{self.outputPath}/'
-                path = os.path.expanduser(f'~/Desktop/{self.outputPath}/')
-                if not os.path.exists(path):
-                    os.makedirs(path)
-                self.pathFolder = path
-            except:
-                pass
+            if not os.path.isabs(self.outputPath):
+                try:
+                    self.pathLocation = f'~/Desktop/{self.outputPath}/' # for letting the user know but necessary
+                    path = os.path.expanduser(f'~/Desktop/{self.outputPath}/')
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    self.outputPath = path # final path created!
+                except:
+                    pass
         else:
-            if not self.selected_folder:
-                self.runbutton.config(state=tk.NORMAL)
-                tkinter.messagebox.showerror("Error", "Please provide save location!")
-                return
-            else:
-                self.pathLocation = self.selected_folder
+            self.runbutton.config(state=tk.NORMAL)
+            tkinter.messagebox.showerror("Error", "Please provide save location!")
+            return
 
-        self.update_status_box('\n\t >> :: Article Formatter Started! :: <<\n')
-        self.update_status_box('\n------------------------------------------------------------------------------\n')
+        self.update_status_box('\n\t\t >> :: Article Formatter Started! :: <<\n', decision=False)
+        self.update_status_box('\n------------------------------------------------------------------------------\n', decision=False)
 
-        self.update_status_box(f'\n\t Chosen file or folder: {self.pdf_path}\n')
+        self.update_status_box(f'\n\t Chosen file or folder: {self.pdf_path}\n', decision=False)
         # self.update_status_box(f'\n\t Articles will be renamed in: {self.pathLocation}\n')
 
         formatChosen = ''
@@ -338,9 +349,10 @@ class fomatter(ttk.Frame):
         for i in self.order:
             if i != 0:
                 formatChosen += f'{orderList[i]}_'
+
         formatChosen = formatChosen[:-1] + ".pdf"
 
-        self.update_status_box(f'\n\t Example Format: {formatChosen}\n')
+        self.update_status_box(f'\n\t Example Format: {formatChosen}\n', decision=False)
 
         self.myThread = Thread(target=self.maindecision)
         self.myThread.daemon = True
@@ -355,58 +367,64 @@ class fomatter(ttk.Frame):
             self.x = True
 
     def maindecision(self):
-        # print(self.pdf_path, self.outputPath, self.order)
-        self.engine(self.pdf_path, self.outputPath, self.order)
-
-        self.update_status_box('\n------------------------------------------------------------------------------\n')
-        self.Message('Complete', '.:: Download Complete! ::.')
-        self.openbutton.config(state=tk.NORMAL)
-        self.runbutton.config(state=tk.NORMAL)
-
-    def pubmed(self, searchTerm):
-        status = False
-        title = 'None'
-        publishedDate = 'None'
-        fullAuthorList = 'None'
-        publishedJournal = 'None'
-
         try:
-            handle = Entrez.esearch(db="pubmed",
-                                    term=searchTerm)
-            record = Entrez.read(handle)
-            IDList = record['IdList']
-
+            self.engine(self.pdf_path, self.outputPath, self.order)
+            self.update_status_box('\n\t\t\t >> :: Complete! :: <<\n', decision=False)
+            self.update_status_box('\n------------------------------------------------------------------------------\n', decision=False)
+            self.Message('Complete', '.:: Reformatting Complete! ::.')
+            self.openbutton.config(state=tk.NORMAL)
+            self.runbutton.config(state=tk.NORMAL)
         except Exception as e:
             print(e)
-            return title, publishedDate, fullAuthorList, publishedJournal # nothing found!
+            tkinter.messagebox.showerror("Error",
+                                         "Please report the error. Error:\n\n" + traceback.format_exc())
+            self.update_status_box('\n\t\t\t >> :: Error! :: <<\n', decision=False)
 
-        for pmid in IDList:
-            handle = Entrez.efetch(db="pubmed", id=pmid, rettype="medline", retmode="text")
-            records = Medline.parse(handle)
-            records = list(records)
-            for record in records:
-                title = record.get("TI", "?")
-                if '.' in title[-1]:
-                    title = title[:-1]
-                fullAuthorList = record.get("AU", "?")
-                publishedJournal = record.get("JT", "?")
+    def pubmed(self, searchTerm):
+            status = False
+            title = 'None'
+            publishedDate = 'None'
+            fullAuthorList = ['None']
+            publishedJournal = 'None'
 
-                if publishedJournal == '':
-                    publishedJournal = record.get("TA", "?")
+            try:
+                handle = Entrez.esearch(db="pubmed",
+                                        term=searchTerm)
+                record = Entrez.read(handle)
+                IDList = record['IdList']
 
-                publishedDate = record.get("EDAT", "?").split('/')[0]
+            except Exception as e:
+                print(e)
+                return status, title, publishedDate, fullAuthorList, publishedJournal # nothing found!
 
-            if len(IDList) != 1:
+            for pmid in IDList:
+                handle = Entrez.efetch(db="pubmed", id=pmid, rettype="medline", retmode="text")
+                records = Medline.parse(handle)
+                records = list(records)
+                for record in records:
+                    title = str(record.get("TI", "?"))
+                    if '.' == title[-1]:
+                        title = title[:-1]
+                    fullAuthorList = record.get("AU", "?")
+                    publishedJournal = str(record.get("JT", "?"))
 
-                if str(title).lower() == str(searchTerm).lower():
+                    if publishedJournal == '':
+                        publishedJournal = record.get("TA", "?")
+
+                    publishedDate = record.get("EDAT", "?").split('/')[0]
+
+                if len(IDList) != 1:
+                    if '.' == str(searchTerm[-1]):
+                        searchTerm = searchTerm[:-1]
+                    if str(title).lower() == str(searchTerm).lower():
+                        status = True
+
+                        return status, title, publishedDate, fullAuthorList, publishedJournal
+                else:
                     status = True
-
                     return status, title, publishedDate, fullAuthorList, publishedJournal
-            else:
-                status = True
-                return status, title, publishedDate, fullAuthorList, publishedJournal
 
-        return status, title, publishedDate, fullAuthorList, publishedJournal
+            return status, title, publishedDate, fullAuthorList, publishedJournal
 
     def engine(self, pathFolder, outputPath, order):
 
@@ -420,59 +438,75 @@ class fomatter(ttk.Frame):
         num = 1
         for pdf in pdfFiles:
             head, tail = os.path.split(pdf)
-            self.update_status_box(f'\n\t {num}. Renaming: {tail}...\n')
-            file = open(pdf, 'rb')
+            try:
+                self.update_status_box(f'\n\t {num}. Renaming: {tail}...\n', decision=False)
 
-            # creating a pdf reader object
-            reader = PyPDF2.PdfReader(file)
+                file = open(pdf, 'rb')
 
-            info = reader.metadata
-            title = info.title
-            creationdate = str(info['/CreationDate']).split(':')[1][:4]
+                # creating a pdf reader object
+                reader = PyPDF2.PdfReader(file)
 
-            author = info.author
-            if author == '':
-                author = info.creator
-                if author == '':
-                    author = 'None'
+                info = reader.metadata
+                title = str(info.title)
 
-            fullAuthors = 'None'
+                fullAuthors = 'None'
 
-            status, title, publishedDate, fullAuthorList, publishedJournal = self.pubmed(title)
+                status, title, publishedDate, fullAuthorList, publishedJournal = self.pubmed(title)
 
-            if '.' in title[-1]:
-                title = title[:-1]
+                if status:
+                    creationdate = publishedDate
+                    fullAuthors = ", ".join(w for w in fullAuthorList)
+                    author = str(fullAuthorList[0])
+                else:
+                    title = str(info.title)
+                    creationdate = str(info['/CreationDate']).split(':')[1][:4]
 
-            if status:
-                creationdate = publishedDate
-                fullAuthors = ", ".join(w for w in fullAuthorList)
-                author = fullAuthorList[0]
+                    author = str(info.author)
+                    if author == '':
+                        author = str(info.creator)
+                        if author == '':
+                            author = 'None'
 
-            for fb in forbidden_chars:
-                title = title.replace(fb, " ")
-                author = author.replace(fb, " ")
-                fullAuthors = fullAuthors.replace(fb, " ")
+                if '.' in str(title[-1]):
+                    title = title[:-1]
 
-            file.close()
+                for fb in forbidden_chars:
+                    title = title.replace(fb, " ")
+                    author = author.replace(fb, " ")
+                    fullAuthors = fullAuthors.replace(fb, " ")
 
-            isExist = os.path.exists(outputPath)
-            if not isExist:
-                # Create a new directory because it does not exist
-                os.makedirs(outputPath)
-            # newPDF_name = f'{author}_{creationdate}_{title}.pdf'
+                file.close()
 
-            orderList = ['None', author, fullAuthors, creationdate, title, publishedJournal]
+                try:
+                    isExist = os.path.exists(outputPath)
+                    if not isExist:
+                        # Create a new directory because it does not exist
+                        os.makedirs(outputPath)
+                except:
+                    pass
 
-            newPDF_name = ""
-            for i in order:
-                if i != 0:
-                    newPDF_name += f'{orderList[i]}_'
-            newPDF_name = newPDF_name[:-1] + ".pdf"
+                # newPDF_name = f'{author}_{creationdate}_{title}.pdf'
 
-            #newPDF_name = f'{orderList[order[0]]}_{orderList[order[1]]}_{orderList[order[2]]}_{orderList[order[3]]}.pdf'
-            # print(newPDF_name)
-            shutil.copy(pdf, f'{outputPath}/{newPDF_name}')
-            num+=1
+                orderList = ['None', author, fullAuthors, creationdate, title, publishedJournal]
+
+                newPDF_name = ""
+                for i in order:
+                    if i != 0:
+                        newPDF_name += f'{orderList[i]}_'
+                newPDF_name = newPDF_name[:-1] + ".pdf"
+
+                #newPDF_name = f'{orderList[order[0]]}_{orderList[order[1]]}_{orderList[order[2]]}_{orderList[order[3]]}.pdf'
+                # print(newPDF_name)
+                try:
+                    shutil.copy(pdf, f'{outputPath}/{newPDF_name}')
+                except shutil.SameFileError:
+                    pass
+
+                self.update_status_box(f'\n\t {num}. Renaming: {tail} Success!\n', decision=True)
+            except Exception as e:
+                self.update_status_box(f'\n\t {num}. Renaming: {tail} Fail!\n', decision=True)
+
+            num += 1
 
 class MyWindow():
 
@@ -503,7 +537,7 @@ class MyWindow():
 
 if __name__ == '__main__':
     root = Tk()
-    root.title("Article Formatter v2.0 @2023", )
+    root.title("Article Formatter v2.1 @2023", )
     root.geometry("960x600+480+250")
     root.resizable(0, 0)
     root.wm_iconbitmap('./files/icon.ico')
