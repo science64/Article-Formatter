@@ -1,5 +1,5 @@
 __author__ = "Süleyman Bozkurt"
-__version__ = "v2.1"
+__version__ = "v2.2"
 __maintainer__ = "Süleyman Bozkurt"
 __email__ = "sbozkurt.mbg@gmail.com"
 __date__ = '28.01.2023'
@@ -42,14 +42,14 @@ class HowTo(ttk.Frame):
         panel.image = img
         panel.place(x=100, y=20)
 
-        label2 = Label(self, text="Video description: ", font=self.font).place(x=150, y=510)
+        label2 = Label(self, text="Video description: ", font=self.font).place(x=120, y=510)
 
-        self.clickme = Button(self, text='https://www.youtube.com/...', fg='#d80000',
+        self.clickme = Button(self, text='https://www.youtube.com/watch?v=Zc78L8_r6Cg', fg='#d80000',
                                 font=Font(family="Times New Roman", size=18, weight='bold'), command=self.callback)
-        self.clickme.place(x=320, y=500)
+        self.clickme.place(x=300, y=500)
 
     def callback(self):
-        webbrowser.open_new('https://www.youtube.com/...')
+        webbrowser.open_new('https://www.youtube.com/watch?v=Zc78L8_r6Cg')
 
 class about(ttk.Frame):
 
@@ -537,7 +537,7 @@ class MyWindow():
 
 if __name__ == '__main__':
     root = Tk()
-    root.title("Article Formatter v2.1 @2023", )
+    root.title("Article Formatter v2.2 @2023", )
     root.geometry("960x600+480+250")
     root.resizable(0, 0)
     root.wm_iconbitmap('./files/icon.ico')
