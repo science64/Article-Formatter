@@ -5,6 +5,8 @@ Provide renaming randomly named articles. Provide desired formatting and organiz
 
 You can design any format of your articles.
 
+It uses Pubmed database via "BioPython" to check Meta data of publish article and/Or Meta data of the PDF files via "PyPDF2". If the article is not published or not having proper META data in the PDF files. It will not yield proper results (mostly None). Therefore BioRxiv files are not fully supported!
+
 Video description how to install and use it:
 
 [![Video description how to install and use it](./example%20files/youtubevideo.png)](https://www.youtube.com/watch?v=uhg5xvLCUh8 "Video description how to install and use it")
