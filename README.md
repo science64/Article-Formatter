@@ -9,7 +9,7 @@ It uses Pubmed database via "BioPython" to check Meta data of publish article an
 
 Video description how to install and use it (Youtube):
 
-[![Video description how to install and use it](https://i9.ytimg.com/vi_webp/Zc78L8_r6Cg/mq3.webp?sqp=CKSk2p4G-oaymwEmCMACELQB8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGEogWChlMA8=&rs=AOn4CLAj4ZXlQ7ChcHtg8XpqI7B4AgxzUA)](https://www.youtube.com/watch?v=Zc78L8_r6Cg "Video description how to install and use it")
+[![Video description how to install and use it](https://i.ytimg.com/vi/Zc78L8_r6Cg/hqdefault.jpg)](https://www.youtube.com/watch?v=Zc78L8_r6Cg "Video description how to install and use it")
 
 Python install codes for MAC and Linux:
 ```
